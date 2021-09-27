@@ -1,2 +1,2 @@
-# weather_station
+# Weather_station
 Weather station arduino project
