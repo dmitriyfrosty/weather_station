@@ -3,11 +3,11 @@
 #include "RF24.h"
 
 RF24 radio(9, 10);  // "создать" модуль на пинах 9 и 10 Для Уно
-//RF24 radio(9,53); // для Меги
+
 
 byte address[][6] = {"1Node", "2Node", "3Node", "4Node", "5Node", "6Node"}; //возможные номера труб
 
-float voltage, temperature;
+
 
 void setup() {
   Serial.begin(9600);         // открываем порт для связи с ПК
@@ -30,18 +30,15 @@ void setup() {
 
 void loop() {
   byte pipeNo; 
-  int gotByte[3];
+  float gotByte[3];
   while (radio.available(&pipeNo)) {        // слушаем эфир со всех труб
     radio.read(&gotByte, sizeof(gotByte));  // чиатем входящий сигнал
-    voltage = 0.01*(map(gotByte[0], 0, 1023, 0, 500));
-    temperature = 0.01*(map(gotByte[1], 0, 1023, 0, 500));
-    serial();
+    Serial.print("temp: ");
+    Serial.println(gotByte[0]);
+    Serial.print("rain: ");
+    Serial.println(gotByte[1]);
+    Serial.print("bat_voltage: ");
+    Serial.println(gotByte[2]);
+    
   }
-}
-
-void serial(){
-  Serial.print("voltag: ");
-  Serial.println(voltage);
-  Serial.print("temperature: ");
-  Serial.println(temperature);
 }
