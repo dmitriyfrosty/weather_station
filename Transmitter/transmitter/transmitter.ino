@@ -1,19 +1,25 @@
 #include <SPI.h>          // библиотека для работы с шиной SPI
+#include <microDS18B20.h> // библиотека датчика температуры
 #include "nRF24L01.h"     // библиотека радиомодуля
 #include "RF24.h"         // ещё библиотека радиомодуля
 
+MicroDS18B20 <3> ds;
+ 
 RF24 radio(9, 10); // "создать" модуль на пинах 9 и 10 Для Уно
-//RF24 radio(9,53); // для Меги
 
 byte address[][6] = {"1Node", "2Node", "3Node", "4Node", "5Node", "6Node"}; //возможные номера труб
-int counter[3];
+float counter[3];  // сюда пишем данные для передачи
 
 void setup() {
-  Serial.begin(9600);         // открываем порт для связи с ПК
+  Serial.begin(9600);
 
+  ds.setResolution(12); //разрешение датчика температуры bit
+  
   pinMode(2, OUTPUT);
-  pinMode(3, INPUT_PULLUP);
+  pinMode(4, INPUT);
+  pinMode(5, OUTPUT);
   digitalWrite(2, HIGH);
+  digitalWrite(5, HIGH);
   
   //-----Настройки NRF-----
   radio.begin();              // активировать модуль
@@ -32,37 +38,31 @@ void setup() {
 }
 
 void loop() {
-  if (digitalRead(3) == 1){
-    measurement();
-    radio_writer();
-    myDelayMicroseconds(60000000);
-  }
-  else{
-    measurement();
-    radio_writer();
-    delay(100);
-  }
+  measurement();
+  radio_writer();
 }
 
 void measurement() {
-  counter[0] = analogRead(1);
-  counter[1] = analogRead(4);
-  counter[2] = digitalRead(3);
+  counter[0] = temp();
+  counter[1] = ! digitalRead(4);
+  counter[2] = analogRead(1) * 5.0 / 1023;
+  Serial.println(counter[2]);
+}
+
+float temp(){
+  ds.requestTemp(); 
+  myDelay(1000);
+  if (ds.readTemp()){
+    return(ds.getTemp());
+  }
 }
 
 void radio_writer() {
-  Serial.print("Sent: ");
-  Serial.print(counter[0]);
-  Serial.print(" ");
-  Serial.print(counter[1]);
-  Serial.print(" ");
-  Serial.println(counter[2]);
   radio.write(&counter, sizeof(counter));
 }
 
-void myDelayMicroseconds(uint32_t us) {
-  uint32_t tmr = micros();
-  while (micros() - tmr < us){
-    if (digitalRead(3) == 0) break;
+void myDelay(uint32_t us) {
+  uint32_t tmr = millis();
+  while (millis() - tmr < us){
   }
 }
